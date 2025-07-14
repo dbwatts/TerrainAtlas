@@ -45,6 +45,7 @@
     const flipbook = document.getElementById('flipbook');
 
     const loadPage = async (pageNum) => {
+      console.log("Rendering page:", pageNum);
       const page = await pdf.getPage(pageNum);
       const scale = 1.5;
       const viewport = page.getViewport({ scale });
