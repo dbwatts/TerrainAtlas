@@ -1,19 +1,27 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Atlas Flipbook</title>
+  <meta charset="UTF-8" />
+  <title>Terrain Atlas Flipbook</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script src="js/turn.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
   <style>
-    body { background: #eaeaea; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    body {
+      background: #eaeaea;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
     #flipbook {
-      width: 90%;
+      width: 90vw;
       height: 90vh;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
     #flipbook .page {
       background: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
       overflow: hidden;
     }
   </style>
@@ -23,58 +31,48 @@
 <div id="flipbook"></div>
 
 <script>
-  const pdfUrl = 'TerrainAtlas_DW_PortfolioCompressed.pdf'; // replace with your actual filename if needed
+  const pdfUrl = 'TerrainAtlas_DW_PortfolioCompressed.pdf';
 
-  // PDF.js logic to render pages as images for Turn.js
-  // Lightweight adaptation for PDFs with facing spreads
+  pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+    const numPages = pdf.numPages;
+    const flipbook = document.getElementById('flipbook');
 
-  // Load PDF.js
-  const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js';
-  document.head.appendChild(script);
+    const loadPage = async (pageNum) => {
+      const page = await pdf.getPage(pageNum);
+      const scale = 1.5;
+      const viewport = page.getViewport({ scale });
 
-  script.onload = () => {
-    const container = document.getElementById('flipbook');
-    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
-      const numPages = pdf.numPages;
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
 
-      const loadPage = pageNum => {
-        return pdf.getPage(pageNum).then(page => {
-          const scale = 2;
-          const viewport = page.getViewport({ scale });
+      await page.render({ canvasContext: context, viewport }).promise;
 
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          canvas.height = viewport.height;
-          canvas.width = viewport.width;
+      const pageDiv = document.createElement('div');
+      pageDiv.className = 'page';
+      pageDiv.innerHTML = `<img src="${canvas.toDataURL()}" style="width:100%; height:auto;">`;
+      flipbook.appendChild(pageDiv);
+    };
 
-          return page.render({ canvasContext: context, viewport }).promise.then(() => {
-            const pageDiv = document.createElement('div');
-            pageDiv.className = 'page';
-            pageDiv.innerHTML = `<img src="${canvas.toDataURL()}" style="width:100%;height:auto;">`;
-            container.appendChild(pageDiv);
-          });
-        });
-      };
+    const loadAllPages = async () => {
+      for (let i = 1; i <= numPages; i++) {
+        await loadPage(i);
+      }
 
-      // Load all pages
-      const loadAllPages = async () => {
-        for (let i = 1; i <= numPages; i++) {
-          await loadPage(i);
-        }
+      $('#flipbook').turn({
+        width: $('#flipbook').width(),
+        height: $('#flipbook').height(),
+        autoCenter: true
+      });
+    };
 
-        // Initialize Turn.js after all pages are loaded
-        $('#flipbook').turn({
-          width: '100%',
-          height: '100%',
-          autoCenter: true
-        });
-      };
-
-      loadAllPages();
-    });
-  };
+    loadAllPages();
+  });
 </script>
+
+</body>
+</html>
 
 </body>
 </html>
