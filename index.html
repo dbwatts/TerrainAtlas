@@ -3,9 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <title>Terrain Atlas Flipbook</title>
+
+  <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Turn.js -->
   <script src="js/turn.min.js"></script>
+  <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
   <style>
     body {
       background: #eaeaea;
@@ -18,11 +23,12 @@
     #flipbook {
       width: 90vw;
       height: 90vh;
+      box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      background: white;
     }
     #flipbook .page {
-      background: white;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
       overflow: hidden;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -70,9 +76,6 @@
     loadAllPages();
   });
 </script>
-
-</body>
-</html>
 
 </body>
 </html>
