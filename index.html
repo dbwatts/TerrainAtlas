@@ -40,7 +40,7 @@
   const pdfUrl = 'TerrainAtlas_DW_PortfolioCompressed.pdf';
 
   pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
-     console.log("PDF loaded, total pages:", pdf.numPages);  
+    console.log("PDF loaded, total pages:", pdf.numPages);  
     const numPages = pdf.numPages;
     const flipbook = document.getElementById('flipbook');
 
