@@ -4,113 +4,105 @@
   <meta charset="UTF-8" />
   <title>Terrain Atlas Flipbook</title>
 
-  <!-- jQuery -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-  <!-- Turn.js -->
-  <script src="js/turn.min.js"></script>
-
   <!-- PDF.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
+  <!-- StPageFlip -->
+  <script src="page-flip.browser.js"></script>
 
   <style>
     body {
       background: #eaeaea;
+      font-family: Arial, sans-serif;
       margin: 0;
       padding: 0;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       align-items: center;
-      min-height: 100vh;
     }
 
-    #flipbook {
-      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-      background: white;
+    #atlas-container {
+         width: 1536px;  /* 768px per page × 2 */
+        height: 768px;
+        margin: 50px auto;
     }
 
-    #flipbook .page {
-      width: 50%;  /* Half of flipbook width for facing pages */
-      height: 100%;
-      overflow: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+    #controls {
+      margin: 20px;
     }
 
-    #flipbook img {
-      width: 100%;
-      height: auto;
-      display: block;
+    #controls button {
+      padding: 10px 20px;
+      font-style: italic;
+      background: #ffffff7f;
+      border: 1px solid #21294b56;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 0 10px;
     }
   </style>
 </head>
 <body>
 
-<div id="flipbook"></div>
+  <div id="atlas-container"></div>
+
+  <div id="controls">
+    <button id="prevBtn">Previous</button>
+    <button id="nextBtn">Next</button>
+  </div>
 
 <script>
-  // Set the PDF.js worker path
-  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
   const pdfUrl = 'TerrainAtlas_DW_PortfolioCompressed.pdf';
+  const container = document.getElementById('atlas-container');
 
-  pdfjsLib.getDocument(pdfUrl).promise.then(async pdf => {
-    console.log("PDF loaded, total pages:", pdf.numPages);
-    const numPages = pdf.numPages;
-    const flipbook = document.getElementById('flipbook');
+  async function loadPDFPages() {
+    const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
+    const pages = [];
 
-    // Use first page to calculate size
-    const firstPage = await pdf.getPage(1);
-    const scale = 2;  // You can adjust scale as needed
-    const viewport = firstPage.getViewport({ scale });
-    const pageWidth = viewport.width;
-    const pageHeight = viewport.height;
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const viewport = page.getViewport({ scale: 2 });
 
-    // Set flipbook container size
-    flipbook.style.width = `${pageWidth * 2}px`; // Two pages side-by-side
-    flipbook.style.height = `${pageHeight}px`;
-
-    // Function to render each page to image
-    const loadPage = async (pageNum) => {
-      console.log("Rendering page:", pageNum);
-      const page = await pdf.getPage(pageNum);
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d', { willReadFrequently: true });
-      const viewport = page.getViewport({ scale });
 
       canvas.width = viewport.width;
       canvas.height = viewport.height;
 
       await page.render({ canvasContext: context, viewport }).promise;
 
-      const pageDiv = document.createElement('div');
-      pageDiv.className = 'page';
-      pageDiv.innerHTML = `<img src="${canvas.toDataURL()}">`;
-      flipbook.appendChild(pageDiv);
-    };
+      pages.push(canvas.toDataURL());
+    }
 
-    // Load all pages, then initialize flipbook
-    const loadAllPages = async () => {
-      for (let i = 1; i <= numPages; i++) {
-        await loadPage(i);
-      }
+    return pages;
+  }
 
-      // Ensure DOM has all pages before initializing
-      setTimeout(() => {
-        $('#flipbook').turn({
-          width: pageWidth * 2,
-          height: pageHeight,
-          autoCenter: true,
-          display: 'double',
-          acceleration: true,
-        });
-      }, 500);
-    };
+  loadPDFPages().then(imageSrcs => {
+    console.log("Loaded pages:", imageSrcs);
 
-    loadAllPages();
+    // Add a small delay to ensure the container is rendered
+    setTimeout(() => {
+      const pageFlip = new St.PageFlip(container, {
+        size: 'fixed',
+        width: 768, // each page width
+        height: 768, // each page height (square)
+        showCover: true,
+        flippingTime: 700,
+        maxShadowOpacity: 0.5,
+        mobileScrollSupport: false
+    });
+
+      pageFlip.loadFromImages(imageSrcs);
+
+      document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
+      document.getElementById('nextBtn').addEventListener('click', () => pageFlip.flipNext());
+    }, 100); // <-- give the DOM a moment
   }).catch(err => {
-    console.error("PDF load error:", err);
+    console.error("Error loading PDF pages:", err);
+    alert("Failed to load atlas.");
   });
 </script>
 
