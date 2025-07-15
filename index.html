@@ -113,13 +113,6 @@
       pages.push(`pages/TerrainAtlas_DW${i}.png`);
     }
 
-
-      // Optional: Check for image loading errors
-      const testImg = new Image();
-      testImg.src = src;
-      testImg.onerror = () => console.error('Image failed to load:', src);
-    }
-
     const pageFlip = new St.PageFlip(container, {
       size: 'fixed',
       width: 768,
