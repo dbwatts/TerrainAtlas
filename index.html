@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Beyond Contours: An Atlas of Terrain Cartography</title>
   <base href="/TerrainAtlas/">
+
   <!-- StPageFlip -->
   <script src="page-flip.browser.js"></script>
 
@@ -64,7 +65,7 @@
     }
 
     #atlas-container {
-      width: 1536px;  /* 768px per page × 2 */
+      width: 1536px;
       height: 768px;
       margin: 50px auto;
       visibility: hidden;
@@ -109,10 +110,16 @@
 
     const pages = [];
     for (let i = 1; i <= 9; i++) {
-      pages.push({ src: `/TerrainAtlas/pages/TerrainAtlas_DW${i}.png` }); 
+      const src = `pages/TerrainAtlas_DW${i}.png`;
+      pages.push({ src });
+
+      // Optional: Check for image loading errors
+      const testImg = new Image();
+      testImg.src = src;
+      testImg.onerror = () => console.error('Image failed to load:', src);
     }
 
-    const pageFlip = new St.PageFlip(container, {
+    const pageFlip = new PageFlip.PageFlip(container, {
       size: 'fixed',
       width: 768,
       height: 768,
