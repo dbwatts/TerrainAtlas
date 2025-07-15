@@ -2,10 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Terrain Atlas Flipbook</title>
-
-  <!-- PDF.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+  <title>Beyond Contours: An Atlas of Terrain Cartography</title>
 
   <!-- StPageFlip -->
   <script src="page-flip.browser.js"></script>
@@ -21,14 +18,61 @@
       align-items: center;
     }
 
+    #splash {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #b4d8ed;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-style: italic;
+      color: #21294b;
+    }
+
+    .dots {
+      display: flex;
+      margin-top: 10px;
+    }
+
+    .dots span {
+      width: 10px;
+      height: 10px;
+      margin: 0 4px;
+      background: #21294b;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+
+    .dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0);
+      } 
+      40% {
+        transform: scale(1);
+      }
+    }
+
     #atlas-container {
-         width: 1536px;  /* 768px per page × 2 */
-        height: 768px;
-        margin: 50px auto;
+      width: 1536px;  /* 768px per page × 2 */
+      height: 768px;
+      margin: 50px auto;
+      visibility: hidden;
     }
 
     #controls {
       margin: 20px;
+      visibility: hidden;
     }
 
     #controls button {
@@ -44,6 +88,13 @@
 </head>
 <body>
 
+  <div id="splash">
+    Loading Beyond Contours...
+    <div class="dots">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+
   <div id="atlas-container"></div>
 
   <div id="controls">
@@ -52,57 +103,35 @@
   </div>
 
 <script>
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+  window.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('atlas-container');
+    const controls = document.getElementById('controls');
 
-  const pdfUrl = 'TerrainAtlas_DW_PortfolioCompressed.pdf';
-  const container = document.getElementById('atlas-container');
-
-  async function loadPDFPages() {
-    const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
     const pages = [];
-
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const viewport = page.getViewport({ scale: 2 });
-
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d', { willReadFrequently: true });
-
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-
-      await page.render({ canvasContext: context, viewport }).promise;
-
-      pages.push(canvas.toDataURL());
+    for (let i = 1; i <= 26; i++) {
+      pages.push({ src: `pages/TerrainAtlas_DW${i}.png` });
     }
 
-    return pages;
-  }
-
-  loadPDFPages().then(imageSrcs => {
-    console.log("Loaded pages:", imageSrcs);
-
-    // Add a small delay to ensure the container is rendered
-    setTimeout(() => {
-      const pageFlip = new St.PageFlip(container, {
-        size: 'fixed',
-        width: 768, // each page width
-        height: 768, // each page height (square)
-        showCover: true,
-        flippingTime: 700,
-        maxShadowOpacity: 0.5,
-        mobileScrollSupport: false
+    const pageFlip = new St.PageFlip(container, {
+      size: 'fixed',
+      width: 768,
+      height: 768,
+      showCover: true,
+      flippingTime: 700,
+      maxShadowOpacity: 0.5,
+      mobileScrollSupport: false
     });
 
-      pageFlip.loadFromImages(imageSrcs);
+    pageFlip.loadFromImages(pages);
 
-      document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
-      document.getElementById('nextBtn').addEventListener('click', () => pageFlip.flipNext());
-    }, 100); // <-- give the DOM a moment
-  }).catch(err => {
-    console.error("Error loading PDF pages:", err);
-    alert("Failed to load atlas.");
+    document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
+    document.getElementById('nextBtn').addEventListener('click', () => pageFlip.flipNext());
+
+    pageFlip.on('init', () => {
+      document.getElementById('splash').style.display = 'none';
+      container.style.visibility = 'visible';
+      controls.style.visibility = 'visible';
+    });
   });
 </script>
 
