@@ -107,12 +107,22 @@
   window.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('atlas-container');
     const controls = document.getElementById('controls');
-    
+
     const pages = [];
-    // For all 26 PNGs
-    for (let i = 1; i <= 26; i++) {
+
+    // Front cover
+    pages.push("TerrainAtlas_DW1.png");
+
+    // Interior spreads (pages 2–25)
+    for (let i = 2; i <= 25; i++) {
       pages.push(`TerrainAtlas_DW${i}.png`);
     }
+
+    // Add null to create a standalone back cover spread
+    pages.push(null);
+
+    // Back cover
+    pages.push("TerrainAtlas_DW26.png");
 
     const pageFlip = new St.PageFlip(container, {
       size: 'fixed',
@@ -139,7 +149,3 @@
 
 </body>
 </html>
-
-
-
-
