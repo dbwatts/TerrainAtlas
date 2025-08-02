@@ -105,38 +105,40 @@
 
 <script>
   window.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('atlas-container');
-    const controls = document.getElementById('controls');
-    
-    const pages = [];
-    // For all 26 PNGs
-    for (let i = 1; i <= 26; i++) {
-      pages.push(TerrainAtlas_DW${i}.png);
-    }
+  const container = document.getElementById('atlas-container');
+  const controls = document.getElementById('controls');
+  
+  const pages = [];
+  for (let i = 1; i <= 26; i++) {
+    pages.push(`TerrainAtlas_DW${i}.png`);
+  }
 
-    const pageFlip = new St.PageFlip(container, {
-      size: 'fixed',
-      width: 768,
-      height: 768,
-      showCover: true,
-      flippingTime: 700,
-      maxShadowOpacity: 0.5,
-      mobileScrollSupport: false
-    });
+  const pageFlip = new St.PageFlip(container, {
+    size: 'fixed',
+    width: 768,
+    height: 768,
+    showCover: true,
+    flippingTime: 700,
+    maxShadowOpacity: 0.5,
+    mobileScrollSupport: false
+  });
 
-    pageFlip.loadFromImages(pages);
+  pageFlip.loadFromImages(pages);
 
-    document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
-    document.getElementById('nextBtn').addEventListener('click', () => pageFlip.flipNext());
+  document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
+  document.getElementById('nextBtn').addEventListener('click', () => pageFlip.flipNext());
 
-    pageFlip.on('init', () => {
-      document.getElementById('splash').style.display = 'none';
-      container.style.visibility = 'visible';
-      controls.style.visibility = 'visible';
+  pageFlip.on('init', () => {
+    document.getElementById('splash').style.display = 'none';
+    container.style.visibility = 'visible';
+    controls.style.visibility = 'visible';
+  });
+});
     });
   });
 </script>
 
 </body>
 </html>
+
 
