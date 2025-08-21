@@ -108,32 +108,36 @@
     const container = document.getElementById('atlas-container');
     const controls = document.getElementById('controls');
 
-    // Explicitly order pages:
-    const pages = [
-      "TerrainAtlas_DW1.png",   // Front cover (recto)
-      "TerrainAtlas_DW2.png",   // Blank verso (inside front cover)
-      "TerrainAtlas_DW3.png",   // Title page (recto)
-    ];
-
-    // Add interior spreads (DW4–DW25)
-    for (let i = 4; i <= 25; i++) {
-      pages.push(`TerrainAtlas_DW${i}.png`);
-    }
-
-    // Back cover
-    pages.push("TerrainAtlas_DW26.png"); // Back cover (verso)
-
     const pageFlip = new St.PageFlip(container, {
       size: 'fixed',
       width: 768,
       height: 768,
-      showCover: true,   // Important: front + back covers
+      showCover: true,
       flippingTime: 700,
       maxShadowOpacity: 0.5,
       mobileScrollSupport: false
     });
 
-    pageFlip.loadFromImages(pages);
+    // Create "page" elements manually
+    const pageElements = [
+      { src: "TerrainAtlas_DW1.png" },  // cover
+      { src: "TerrainAtlas_DW2.png" },  // blank verso
+      { src: "TerrainAtlas_DW3.png" },  // title page
+      // DW4–DW25
+      ...Array.from({length: 22}, (_, i) => ({ src: `TerrainAtlas_DW${i+4}.png` })),
+      { src: "TerrainAtlas_DW26.png" }  // back cover
+    ];
+
+    // Build DOM nodes for each page
+    const pageNodes = pageElements.map(p => {
+      const page = document.createElement('div');
+      page.classList.add('page');
+      page.innerHTML = `<img src="${p.src}" style="width:100%; height:100%;">`;
+      return page;
+    });
+
+    // Load them
+    pageFlip.loadFromHTML(pageNodes);
 
     document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
     document.getElementById('nextBtn').addEventListener('click', () => pageFlip.flipNext());
@@ -146,5 +150,7 @@
   });
 </script>
 
+
 </body>
 </html>
+
