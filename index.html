@@ -85,6 +85,22 @@
       cursor: pointer;
       margin: 0 10px;
     }
+
+    /* Required structure for StPageFlip */
+    .page {
+      width: 100%;
+      height: 100%;
+    }
+    .page-content {
+      width: 100%;
+      height: 100%;
+    }
+    .page-content img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
   </style>
 </head>
 <body>
@@ -118,25 +134,27 @@
       mobileScrollSupport: false
     });
 
-    // Create "page" elements manually
-    const pageElements = [
-      { src: "TerrainAtlas_DW1.png" },  // cover
-      { src: "TerrainAtlas_DW2.png" },  // blank verso
-      { src: "TerrainAtlas_DW3.png" },  // title page
-      // DW4–DW25
-      ...Array.from({length: 22}, (_, i) => ({ src: `TerrainAtlas_DW${i+4}.png` })),
-      { src: "TerrainAtlas_DW26.png" }  // back cover
+    // Explicit atlas order
+    const sources = [
+      "TerrainAtlas_DW1.png",   // cover (recto)
+      "TerrainAtlas_DW2.png",   // blank verso
+      "TerrainAtlas_DW3.png",   // title page (recto)
+      ...Array.from({length: 22}, (_, i) => `TerrainAtlas_DW${i+4}.png`),
+      "TerrainAtlas_DW26.png"   // back cover (verso)
     ];
 
-    // Build DOM nodes for each page
-    const pageNodes = pageElements.map(p => {
+    // Build DOM nodes with correct structure
+    const pageNodes = sources.map(src => {
       const page = document.createElement('div');
       page.classList.add('page');
-      page.innerHTML = `<img src="${p.src}" style="width:100%; height:100%;">`;
+      page.innerHTML = `
+        <div class="page-content">
+          <img src="${src}" alt="Atlas page">
+        </div>`;
       return page;
     });
 
-    // Load them
+    // Load them into PageFlip
     pageFlip.loadFromHTML(pageNodes);
 
     document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
@@ -150,7 +168,5 @@
   });
 </script>
 
-
 </body>
 </html>
-
