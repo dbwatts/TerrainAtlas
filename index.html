@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <title>Beyond Contours: An Atlas of Terrain Cartography</title>
+
+  <!-- IMPORTANT:
+       If you're testing locally (file://) comment out the base tag.
+       Keep it when serving from https://<user>.github.io/TerrainAtlas/ -->
   <base href="/TerrainAtlas/">
 
   <!-- StPageFlip -->
@@ -21,7 +25,7 @@
 
     #splash {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      inset: 0;
       background: #b4d8ed;
       z-index: 9999;
       display: flex;
@@ -32,53 +36,29 @@
       font-style: italic;
       color: #21294b;
     }
-
-    .dots {
-      display: flex;
-      margin-top: 10px;
-    }
-
+    .dots { display: flex; margin-top: 10px; }
     .dots span {
-      width: 10px;
-      height: 10px;
-      margin: 0 4px;
-      background: #21294b;
-      border-radius: 50%;
+      width: 10px; height: 10px; margin: 0 4px; background: #21294b; border-radius: 50%;
       animation: bounce 1.2s infinite ease-in-out;
     }
-
-    .dots span:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    .dots span:nth-child(3) {
-      animation-delay: 0.4s;
-    }
+    .dots span:nth-child(2) { animation-delay: 0.2s; }
+    .dots span:nth-child(3) { animation-delay: 0.4s; }
 
     @keyframes bounce {
-      0%, 80%, 100% {
-        transform: scale(0);
-      } 
-      40% {
-        transform: scale(1);
-      }
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
     }
 
-    /* --- Atlas container --- */
+    /* Container must be exactly 2x page width by page height */
     #atlas-container {
-      width: 100%;
-      max-width: 1536px; /* double-page width */
-      aspect-ratio: 2 / 1; /* keep spreads proportionate */
+      width: 1536px;   /* 2 * 768 */
+      height: 768px;   /* page height */
       margin: 50px auto;
       visibility: hidden;
+      touch-action: pan-y; /* allow vertical scroll on touch devices */
     }
 
-    /* --- Controls --- */
-    #controls {
-      margin: 20px;
-      visibility: hidden;
-    }
-
+    #controls { margin: 20px; visibility: hidden; }
     #controls button {
       padding: 10px 20px;
       font-style: italic;
@@ -88,26 +68,13 @@
       cursor: pointer;
       margin: 0 10px;
     }
-
-    /* --- Responsive tweaks --- */
-    @media (max-width: 900px) {
-      #atlas-container {
-        margin: 20px auto;
-      }
-      #controls button {
-        padding: 6px 12px;
-        font-size: 0.9rem;
-      }
-    }
   </style>
 </head>
 <body>
 
   <div id="splash">
     Loading Beyond Contours...
-    <div class="dots">
-      <span></span><span></span><span></span>
-    </div>
+    <div class="dots"><span></span><span></span><span></span></div>
   </div>
 
   <div id="atlas-container"></div>
@@ -118,59 +85,77 @@
   </div>
 
 <script>
-  window.addEventListener('DOMContentLoaded', () => {
+  window.addEventListener('DOMContentLoaded', async () => {
     const container = document.getElementById('atlas-container');
     const controls = document.getElementById('controls');
 
-    const pageFlip = new St.PageFlip(container, {
-      size: 'stretch',       // responsive
-      width: 768,            // base single-page size
-      height: 768,
-      showCover: true,
-      flippingTime: 700,
-      maxShadowOpacity: 0.5,
-      mobileScrollSupport: false
-    });
+    // Keep these in one place
+    const PAGE_W = 768;
+    const PAGE_H = 768;
 
-    // Define page order
-    const pageElements = [
-      { src: "TerrainAtlas_DW1.png" },  // cover (recto)
-      { src: "TerrainAtlas_DW2.png" },  // blank verso
-      { src: "TerrainAtlas_DW3.png" },  // title page (recto)
-      // interior pages
-      ...Array.from({length: 22}, (_, i) => ({ src: `TerrainAtlas_DW${i+4}.png` })),
-      { src: "TerrainAtlas_DW26.png" }  // back cover (verso)
+    // Make sure the container is sized correctly
+    container.style.width  = (PAGE_W * 2) + 'px';
+    container.style.height = PAGE_H + 'px';
+
+    // Exact order you described:
+    const sources = [
+      "TerrainAtlas_DW1.png",  // cover (recto)
+      "TerrainAtlas_DW2.png",  // blank verso
+      "TerrainAtlas_DW3.png",  // title page (recto)
+      ...Array.from({ length: 22 }, (_, i) => `TerrainAtlas_DW${i + 4}.png`),
+      "TerrainAtlas_DW26.png"  // back cover (verso)
     ];
 
-    // Build DOM nodes
-    const pageNodes = pageElements.map(p => {
-      const page = document.createElement('div');
-      page.classList.add('page');
-      page.innerHTML = `<img src="${p.src}" style="width:100%; height:100%; object-fit: contain;">`;
-      return page;
+    // Quick preload to surface any 404s in the console
+    const preload = (src) => new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => resolve({ src, ok: true });
+      img.onerror = () => resolve({ src, ok: false });
+      img.src = src;
+    });
+    const results = await Promise.all(sources.map(preload));
+    const missing = results.filter(r => !r.ok);
+    if (missing.length) {
+      console.warn("Missing images (check paths/case):", missing.map(m => m.src));
+      // Not fatal; book will still render, but those pages will look blank.
+    }
+
+    const pageFlip = new St.PageFlip(container, {
+      width: PAGE_W,           // single page width
+      height: PAGE_H,          // single page height
+      size: 'fixed',
+      showCover: true,         // treat first/last as single hard pages
+      usePortrait: false,      // <- FORCE two-page spreads (critical)
+      autoSize: false,         // don't resize parent; we set it ourselves
+      mobileScrollSupport: false,
+      maxShadowOpacity: 0.5,
+      flippingTime: 700
     });
 
-    // Load into PageFlip
-    pageFlip.loadFromHTML(pageNodes);
-
-    // Controls
-    document.getElementById('prevBtn').addEventListener('click', () => pageFlip.flipPrev());
-    document.getElementById('nextBtn').addEventListener('click', () => pageFlip.flipNext());
-
+    // Helpful console diagnostics
+    pageFlip.on('changeOrientation', (e) => console.log('orientation:', e.data));
     pageFlip.on('init', () => {
       document.getElementById('splash').style.display = 'none';
       container.style.visibility = 'visible';
       controls.style.visibility = 'visible';
+    });
+
+    // Load images (canvas mode)
+    pageFlip.loadFromImages(sources);
+
+    // Controls
+    document.getElementById('prevBtn').onclick = () => pageFlip.flipPrev();
+    document.getElementById('nextBtn').onclick = () => pageFlip.flipNext();
+
+    // If the viewport resizes, keep enforcing landscape if possible
+    window.addEventListener('resize', () => {
+      // If the book ever falls back to portrait on a small screen,
+      // this keeps the container sized for landscape when space allows.
+      container.style.width  = (PAGE_W * 2) + 'px';
+      container.style.height = PAGE_H + 'px';
     });
   });
 </script>
 
 </body>
 </html>
-
-
-
-
-
-
-
